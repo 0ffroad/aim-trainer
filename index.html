@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Aim Trainer Game</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Segoe UI', sans-serif;
+      background: #111;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      margin: 20px;
+      font-size: 2em;
+    }
+
+    #menu, #game, #result {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #menu {
+      display: flex;
+    }
+
+    label, select, input {
+      margin: 10px;
+      font-size: 1rem;
+    }
+
+    button {
+      padding: 10px 20px;
+      background: #ff4444;
+      border: none;
+      color: white;
+      font-size: 1rem;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background: #dd3333;
+    }
+
+    #gameArea {
+      position: relative;
+      width: 100vw;
+      height: 70vh;
+      border: 2px solid white;
+      margin-top: 20px;
+      overflow: hidden;
+      background: #222;
+    }
+
+    .dot {
+      position: absolute;
+      background: red;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    #scoreDisplay, #timerDisplay, #accuracyDisplay {
+      margin: 10px;
+      font-size: 1.2rem;
+    }
+
+    #result h2 {
+      margin-top: 30px;
+    }
+
+    #result p {
+      font-size: 1.1rem;
+      margin: 10px;
+    }
+
+    #result p strong {
+      color: #ff4444;
+    }
+  </style>
+</head>
+<body>
+  <h1>Aim Trainer</h1>
+
+  <div id="menu">
+    <label>Difficulty:
+      <select id="difficulty">
+        <option value="easy">Easy (big + slow)</option>
+        <option value="medium">Medium</option>
+        <option value="hard">Hard (small + fast)</option>
+      </select>
+    </label>
+
+    <label>Game Time (seconds):
+      <input type="number" id="gameTime" value="30" min="5" max="300" />
+    </label>
+
+    <button onclick="startGame()">Start Game</button>
+  </div>
+
+  <div id="game">
+    <div id="scoreDisplay">Score: 0</div>
+    <div id="accuracyDisplay">Accuracy: 0% (0 Hits / 0 Misses)</div>
+    <div id="timerDisplay">Time Left: 0</div>
+    <div id="gameArea"></div>
+  </div>
+
+  <div id="result">
+    <h2>Game Over!</h2>
+    <p id="finalScore">Your Score: 0</p>
+    <p id="finalAccuracy">Accuracy: 0%</p>
+    <button onclick="location.reload()">Play Again</button>
+  </div>
+
+  <script>
+    const gameArea = document.getElementById("gameArea");
+    const scoreDisplay = document.getElementById("scoreDisplay");
+    const accuracyDisplay = document.getElementById("accuracyDisplay");
+    const timerDisplay = document.getElementById("timerDisplay");
+    const resultScreen = document.getElementById("result");
+    const finalScoreText = document.getElementById("finalScore");
+    const finalAccuracyText = document.getElementById("finalAccuracy");
+
+    let score = 0;
+    let hits = 0;
+    let misses = 0;
+    let timeLeft = 0;
+    let dotInterval;
+    let countdownInterval;
+    let dotSize = 40;
+    let dotSpeed = 1000;
+
+    function startGame() {
+      document.getElementById("menu").style.display = "none";
+      document.getElementById("game").style.display = "flex";
+
+      score = 0;
+      hits = 0;
+      misses = 0;
+      updateScoreDisplay();
+      updateAccuracyDisplay();
+
+      const difficulty = document.getElementById("difficulty").value;
+      const time = parseInt(document.getElementById("gameTime").value);
+
+      timeLeft = time;
+      timerDisplay.textContent = `Time Left: ${timeLeft}`;
+
+      if (difficulty === "easy") {
+        dotSize = 60;
+        dotSpeed = 1200;
+      } else if (difficulty === "medium") {
+        dotSize = 40;
+        dotSpeed = 900;
+      } else if (difficulty === "hard") {
+        dotSize = 25;
+        dotSpeed = 600;
+      }
+
+      countdownInterval = setInterval(() => {
+        timeLeft--;
+        timerDisplay.textContent = `Time Left: ${timeLeft}`;
+        if (timeLeft <= 0) {
+          endGame();
+        }
+      }, 1000);
+
+      dotInterval = setInterval(spawnDot, dotSpeed);
+    }
+
+    function spawnDot() {
+      const dot = document.createElement("div");
+      dot.classList.add("dot");
+      dot.style.width = `${dotSize}px`;
+      dot.style.height = `${dotSize}px`;
+
+      const maxLeft = gameArea.clientWidth - dotSize;
+      const maxTop = gameArea.clientHeight - dotSize;
+
+      dot.style.left = Math.floor(Math.random() * maxLeft) + "px";
+      dot.style.top = Math.floor(Math.random() * maxTop) + "px";
+
+      let clicked = false;
+
+      dot.onclick = function () {
+        if (!clicked) {
+          clicked = true;
+          hits++;
+          score++;
+          dot.remove();
+          updateScoreDisplay();
+          updateAccuracyDisplay();
+        }
+      };
+
+      gameArea.appendChild(dot);
+
+      setTimeout(() => {
+        if (!clicked && dot.parentElement) {
+          misses++;
+          dot.remove();
+          updateAccuracyDisplay();
+        }
+      }, dotSpeed - 100);
+    }
+
+    function updateScoreDisplay() {
+      scoreDisplay.textContent = `Score: ${score}`;
+    }
+
+    function updateAccuracyDisplay() {
+      const total = hits + misses;
+      const accuracy = total === 0 ? 0 : Math.round((hits / total) * 100);
+      accuracyDisplay.textContent = `Accuracy: ${accuracy}% (${hits} Hits / ${misses} Misses)`;
+    }
+
+    function endGame() {
+      clearInterval(dotInterval);
+      clearInterval(countdownInterval);
+      document.getElementById("game").style.display = "none";
+      resultScreen.style.display = "flex";
+
+      const total = hits + misses;
+      const accuracy = total === 0 ? 0 : Math.round((hits / total) * 100);
+
+      finalScoreText.textContent = `Your Score: ${score}`;
+      finalAccuracyText.innerHTML = `Accuracy: <strong>${accuracy}%</strong> (${hits} Hits / ${misses} Misses)`;
+    }
+  </script>
+</body>
+</html>
