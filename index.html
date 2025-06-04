@@ -96,11 +96,19 @@
   <h1>Aim Trainer</h1>
 
   <div id="menu">
-    <label>Difficulty:
-      <select id="difficulty">
-        <option value="easy">Easy (big + slow)</option>
-        <option value="medium">Medium</option>
-        <option value="hard">Hard (small + fast)</option>
+    <label>Dot Size:
+      <select id="dotSizeSelect">
+        <option value="60">Large</option>
+        <option value="40" selected>Medium</option>
+        <option value="25">Small</option>
+      </select>
+    </label>
+
+    <label>Dot Speed:
+      <select id="dotSpeedSelect">
+        <option value="1200">Slow</option>
+        <option value="900" selected>Normal</option>
+        <option value="600">Fast</option>
       </select>
     </label>
 
@@ -153,22 +161,12 @@
       updateScoreDisplay();
       updateAccuracyDisplay();
 
-      const difficulty = document.getElementById("difficulty").value;
+      dotSize = parseInt(document.getElementById("dotSizeSelect").value);
+      dotSpeed = parseInt(document.getElementById("dotSpeedSelect").value);
       const time = parseInt(document.getElementById("gameTime").value);
 
       timeLeft = time;
       timerDisplay.textContent = `Time Left: ${timeLeft}`;
-
-      if (difficulty === "easy") {
-        dotSize = 60;
-        dotSpeed = 1200;
-      } else if (difficulty === "medium") {
-        dotSize = 40;
-        dotSpeed = 900;
-      } else if (difficulty === "hard") {
-        dotSize = 25;
-        dotSpeed = 600;
-      }
 
       countdownInterval = setInterval(() => {
         timeLeft--;
@@ -179,6 +177,8 @@
       }, 1000);
 
       dotInterval = setInterval(spawnDot, dotSpeed);
+
+      gameArea.addEventListener("click", handleMissClick);
     }
 
     function spawnDot() {
@@ -195,7 +195,8 @@
 
       let clicked = false;
 
-      dot.onclick = function () {
+      dot.onclick = function (e) {
+        e.stopPropagation(); // prevent registering as a miss
         if (!clicked) {
           clicked = true;
           hits++;
@@ -210,11 +211,19 @@
 
       setTimeout(() => {
         if (!clicked && dot.parentElement) {
-          misses++;
           dot.remove();
+          misses++;
           updateAccuracyDisplay();
         }
       }, dotSpeed - 100);
+    }
+
+    function handleMissClick(e) {
+      // Only count a miss if they clicked on the gameArea directly (not on a dot)
+      if (e.target === gameArea) {
+        misses++;
+        updateAccuracyDisplay();
+      }
     }
 
     function updateScoreDisplay() {
@@ -230,6 +239,7 @@
     function endGame() {
       clearInterval(dotInterval);
       clearInterval(countdownInterval);
+      gameArea.removeEventListener("click", handleMissClick);
       document.getElementById("game").style.display = "none";
       resultScreen.style.display = "flex";
 
