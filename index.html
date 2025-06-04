@@ -58,8 +58,6 @@
 
     #gameArea {
       position: relative;
-      width: 100vw;
-      height: 70vh;
       border: 2px solid white;
       margin-top: 20px;
       overflow: hidden;
@@ -112,6 +110,15 @@
       </select>
     </label>
 
+    <label>Game Area Size:
+      <select id="areaSizeSelect">
+        <option value="small">Small</option>
+        <option value="medium" selected>Medium</option>
+        <option value="large">Large</option>
+        <option value="fullscreen">Fullscreen</option>
+      </select>
+    </label>
+
     <label>Game Time (seconds):
       <input type="number" id="gameTime" value="30" min="5" max="300" />
     </label>
@@ -151,6 +158,27 @@
     let dotSize = 40;
     let dotSpeed = 1000;
 
+    function setGameAreaSize(option) {
+      switch (option) {
+        case "small":
+          gameArea.style.width = "300px";
+          gameArea.style.height = "200px";
+          break;
+        case "medium":
+          gameArea.style.width = "600px";
+          gameArea.style.height = "400px";
+          break;
+        case "large":
+          gameArea.style.width = "900px";
+          gameArea.style.height = "600px";
+          break;
+        case "fullscreen":
+          gameArea.style.width = "100vw";
+          gameArea.style.height = "70vh";
+          break;
+      }
+    }
+
     function startGame() {
       document.getElementById("menu").style.display = "none";
       document.getElementById("game").style.display = "flex";
@@ -163,8 +191,10 @@
 
       dotSize = parseInt(document.getElementById("dotSizeSelect").value);
       dotSpeed = parseInt(document.getElementById("dotSpeedSelect").value);
-      const time = parseInt(document.getElementById("gameTime").value);
+      const areaSizeOption = document.getElementById("areaSizeSelect").value;
+      setGameAreaSize(areaSizeOption);
 
+      const time = parseInt(document.getElementById("gameTime").value);
       timeLeft = time;
       timerDisplay.textContent = `Time Left: ${timeLeft}`;
 
@@ -177,7 +207,6 @@
       }, 1000);
 
       dotInterval = setInterval(spawnDot, dotSpeed);
-
       gameArea.addEventListener("click", handleMissClick);
     }
 
@@ -196,7 +225,7 @@
       let clicked = false;
 
       dot.onclick = function (e) {
-        e.stopPropagation(); // prevent registering as a miss
+        e.stopPropagation();
         if (!clicked) {
           clicked = true;
           hits++;
@@ -219,7 +248,6 @@
     }
 
     function handleMissClick(e) {
-      // Only count a miss if they clicked on the gameArea directly (not on a dot)
       if (e.target === gameArea) {
         misses++;
         updateAccuracyDisplay();
